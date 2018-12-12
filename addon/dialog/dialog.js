@@ -3,6 +3,9 @@
 
 // Open simple dialogs on top of an editor. Relies on dialog.css.
 
+// Was taken from CodeMirror/addon/dialog/dialog.js
+// Forked from rev 7192a89300611014d56f37a348662812791d08e6
+
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
     mod(require("../../lib/codemirror"));
@@ -56,33 +59,46 @@
       }
     }
 
-    var inp = dialog.getElementsByTagName("input")[0], button;
-    if (inp) {
-      inp.focus();
-
-      if (options.value) {
-        inp.value = options.value;
-        if (options.selectValueOnOpen !== false) {
-          inp.select();
-        }
+    function getAllValues(inputs) {
+      var values = [];
+      for (var i=0; i<inputs.length;i++) {
+        values.push(inputs[i].value);
       }
+      return values.length === 1 ? values[0] : values;
+    }
 
-      if (options.onInput)
-        CodeMirror.on(inp, "input", function(e) { options.onInput(e, inp.value, close);});
-      if (options.onKeyUp)
-        CodeMirror.on(inp, "keyup", function(e) {options.onKeyUp(e, inp.value, close);});
+    var inps = dialog.getElementsByTagName("input"), button;
+    if (inps.length > 0) {
+      for (var i=0; i<inps.length; i++) {
+        var inp = inps[i];
+        if (i === 0) {
+          inp.focus();
 
-      CodeMirror.on(inp, "keydown", function(e) {
-        if (options && options.onKeyDown && options.onKeyDown(e, inp.value, close)) { return; }
-        if (e.keyCode == 27 || (options.closeOnEnter !== false && e.keyCode == 13)) {
-          inp.blur();
-          CodeMirror.e_stop(e);
-          close();
+          if (options.value) {
+            inp.value = options.value;
+            if (options.selectValueOnOpen !== false) {
+              inp.select();
+            }
+          }
         }
-        if (e.keyCode == 13) callback(inp.value, e);
-      });
 
-      if (options.closeOnBlur !== false) CodeMirror.on(inp, "blur", close);
+        if (options.onInput)
+          CodeMirror.on(inp, "input", function(e) { options.onInput(e, inp.value, close);});
+        if (options.onKeyUp)
+          CodeMirror.on(inp, "keyup", function(e) {options.onKeyUp(e, inp.value, close);});
+
+        CodeMirror.on(inp, "keydown", function(e) {
+          if (options && options.onKeyDown && options.onKeyDown(e, inp.value, close)) { return; }
+          if (e.keyCode == 27 || (options.closeOnEnter !== false && e.keyCode == 13)) {
+            inp.blur();
+            CodeMirror.e_stop(e);
+            close();
+          }
+          if (e.keyCode == 13) callback(getAllValues(inps), e);
+        });
+
+        if (options.closeOnBlur !== false) CodeMirror.on(inp, "blur", close);
+      }
     } else if (button = dialog.getElementsByTagName("button")[0]) {
       CodeMirror.on(button, "click", function() {
         close();
